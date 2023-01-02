@@ -45,6 +45,9 @@ app.use(express.urlencoded({extended: true}))
 app.use(express.json())
 app.use(cors({ origin: "*" })); // Run cors middleware
 //Router of "to do list"
-app.post('/createList', (req, res) => createDueTimeLists())
+app.post('/createList', async (req, res) => createDueTimeLists(req, res))
 //Start to listem to port
 app.listen(obj.port)
+
+//Export data
+module.exports = { newTimer }
