@@ -1,0 +1,22 @@
+{
+    "variables": {
+        "paths": "./",
+        "charset": "utf8mb4",
+        "project": "lembrete-vencimentos",
+        "maxPages": 10
+    },
+    "database": {
+        "uni_intra": {
+            "host": "[host]",
+            "username": "[username]",
+            "password": "[senha]",
+            "scheme": "[db]"
+        }
+    },
+    "vencimentos": {
+        "d0": [],
+        "d3": [],
+        "d7": [],
+        "atrasos": []
+    }
+}
