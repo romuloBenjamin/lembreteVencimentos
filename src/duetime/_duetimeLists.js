@@ -1,27 +1,13 @@
-//Get NPM Modules
-const mysql = require('mysql2/promise')
-const fs = require('fs')
+//Get Ext Scripts
 let { executeQuery, executeLoop } = require("../conexoes/database")
 let { newTimer, timeBetween } = require("../getclocks/_getclocks")
-//Get Ext Scripts
+let { createFiles, writeFiles } = require("../logFactory/_logfactory")
+const { sendLembretes } = require("../mailer/_sender")
 let variables = require("../config/config.json")
 //Get Variables
 let db = {}
 db.raw = {}
 /* ------------------------------------- Get BlackBox ------------------------------------- */
-//Create Folder Logs
-const createLogFolder = () => {
-    if (!fs.existsSync(`${variables.variables.paths.dir}logs`)) fs.mkdirSync(`${variables.variables.paths.dir}logs`)
-    return
-}
-createLogFolder()
-//Create Files
-const createJsonFiles = async (fileName = '') => {
-    if (fileName == '') return;
-    if (!fs.existsSync(`${variables.variables.paths.dir}logs/${fileName}.json`)) return fs.createReadStream(`${variables.variables.paths.dir}logs/${fileName}.json`)
-}
-//Write log
-const writeLogToJson = async (file, content) => fs.writeFileSync(`${variables.variables.paths.dir}logs/${file}.json`, JSON.stringify(content))
 //Get SQL Boleto
 const sqlBoletos = () => {
     db.sql = "SELECT `bol_data_cadastro`, `bol_destinatario`, `bol_nota`, `bol_vencimento`, `bol_fatura`, `bol_info_boleto`, `bol_code`, `nf_emissao`, `nf_numero`, `nf_chave`, `nf_valor`, `des_nome`, `des_documento`, `des_email` "
@@ -43,7 +29,7 @@ const createDueTimeLists = async (req, res) => {
             console.log(db.raw.data.length);
         }).then(async () => {
             variables.vencimentos.d3 = []
-            await createJsonFiles('vencimentos-3-dias')
+            await createFiles('vencimentos-3-dias')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
@@ -53,7 +39,7 @@ const createDueTimeLists = async (req, res) => {
             }
         }).then(async () => {
             variables.vencimentos.d7 = []
-            await createJsonFiles('vencimentos-7-dias')
+            await createFiles('vencimentos-7-dias')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
@@ -63,7 +49,7 @@ const createDueTimeLists = async (req, res) => {
             }
         }).then(async () => {
             variables.vencimentos.atrasos = []
-            await createJsonFiles('vencimentos-atrasos')
+            await createFiles('vencimentos-atrasos')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
@@ -73,7 +59,7 @@ const createDueTimeLists = async (req, res) => {
             }
         }).then(async () => {
             variables.vencimentos.d0 = []
-            await createJsonFiles('vencimentos-de-hoje')
+            await createFiles('vencimentos-de-hoje')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
@@ -83,14 +69,15 @@ const createDueTimeLists = async (req, res) => {
             }
         }).then(async () => {
             //Create File depicturing due time till 3 days
-            await writeLogToJson("vencimentos-3-dias" , {"vencimentos": variables.vencimentos.d3})
+            await writeFiles("vencimentos-3-dias" , {"vencimentos": variables.vencimentos.d3})
             //Create File depicturing due time till 7 days
-            await writeLogToJson("vencimentos-7-dias" , {"vencimentos": variables.vencimentos.d7})
+            await writeFiles("vencimentos-7-dias" , {"vencimentos": variables.vencimentos.d7})
             //Create File depicturing due time today
-            await writeLogToJson("vencimentos-de-hoje" , {"vencimentos": variables.vencimentos.d0})            
+            await writeFiles("vencimentos-de-hoje" , {"vencimentos": variables.vencimentos.d0})            
             //Create File depicturing due already blowup
-            await writeLogToJson("vencimentos-atrasos" , {"vencimentos": variables.vencimentos.atrasos})
-        }).catch((errs) => { console.log(errs); })
+            await writeFiles("vencimentos-atrasos" , {"vencimentos": variables.vencimentos.atrasos})
+        }).then(async () => sendLembretes())
+        .catch((errs) => { console.log(errs); })
 }
 //Export data
 module.exports = { createDueTimeLists }
