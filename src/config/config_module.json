@@ -1,6 +1,9 @@
 {
     "variables": {
-        "paths": "./",
+        "paths": {
+            "dir": "./src/",
+            "inner": "../"
+        },
         "charset": "utf8mb4",
         "project": "lembrete-vencimentos",
         "maxPages": 10
@@ -12,6 +15,10 @@
             "password": "[senha]",
             "scheme": "[db]"
         }
+    },
+    "emails": {
+        "success": [],
+        "bounces": []
     },
     "vencimentos": {
         "d0": [],
