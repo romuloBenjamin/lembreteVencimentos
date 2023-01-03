@@ -1,13 +1,27 @@
 //Get NPM Modules
 const mysql = require('mysql2/promise')
+const fs = require('fs')
 let { executeQuery, executeLoop } = require("../conexoes/database")
-let { newTimer } = require("../getclocks/_getclocks")
+let { newTimer, timeBetween } = require("../getclocks/_getclocks")
 //Get Ext Scripts
 let variables = require("../config/config.json")
 //Get Variables
 let db = {}
 db.raw = {}
 /* ------------------------------------- Get BlackBox ------------------------------------- */
+//Create Folder Logs
+const createLogFolder = () => {
+    if (!fs.existsSync(`${variables.variables.paths.dir}logs`)) fs.mkdirSync(`${variables.variables.paths.dir}logs`)
+    return
+}
+createLogFolder()
+//Create Files
+const createJsonFiles = async (fileName = '') => {
+    if (fileName == '') return;
+    if (!fs.existsSync(`${variables.variables.paths.dir}logs/${fileName}.json`)) return fs.createReadStream(`${variables.variables.paths.dir}logs/${fileName}.json`)
+}
+//Write log
+const writeLogToJson = async (file, content) => fs.writeFileSync(`${variables.variables.paths.dir}logs/${file}.json`, JSON.stringify(content))
 //Get SQL Boleto
 const sqlBoletos = () => {
     db.sql = "SELECT `bol_data_cadastro`, `bol_destinatario`, `bol_nota`, `bol_vencimento`, `bol_fatura`, `bol_info_boleto`, `bol_code`, `nf_emissao`, `nf_numero`, `nf_chave`, `nf_valor`, `des_nome`, `des_documento`, `des_email` "
@@ -16,8 +30,6 @@ const sqlBoletos = () => {
     db.sql += "INNER JOIN `empresa_notas_destinatarios` ON `empresa_notas_boletos`.`bol_destinatario` = `empresa_notas_destinatarios`.`des_id`"
     return db;
 }
-//Set data Between
-const getTimeBetWeen = async (vencimento, now) => (vencimento.getTime() - now.getTime()) / (1000 * 3600 * 24)
 /* ------------------------------------ Start Process ------------------------------------ */
 //Create List of pays by due time
 const createDueTimeLists = async (req, res) => {
@@ -28,44 +40,56 @@ const createDueTimeLists = async (req, res) => {
             //Store data in db loop
             let dd = await executeLoop(rows)
             db.raw.data = dd
+            console.log(db.raw.data.length);
         }).then(async () => {
             variables.vencimentos.d3 = []
+            await createJsonFiles('vencimentos-3-dias')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
-                let timeBetween = await getTimeBetWeen(vencimento, now)
+                let timebetween = await timeBetween(vencimento, now)
                 //Set Vencimentos para daqui a 3 dias
-                if (parseInt(timeBetween) === 3) variables.vencimentos.d3.push({linhas})
+                if (parseInt(timebetween) === 3) variables.vencimentos.d3.push({linhas})
             }
         }).then(async () => {
             variables.vencimentos.d7 = []
+            await createJsonFiles('vencimentos-7-dias')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
-                let timeBetween = await getTimeBetWeen(vencimento, now)
+                let timebetween = await timeBetween(vencimento, now)
                 //Set Vencimentos para daqui a 7 dias
-                if (parseInt(timeBetween) === 7) variables.vencimentos.d7.push({linhas})
+                if (parseInt(timebetween) === 7) variables.vencimentos.d7.push({linhas})
             }
         }).then(async () => {
             variables.vencimentos.atrasos = []
+            await createJsonFiles('vencimentos-atrasos')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
-                let timeBetween = await getTimeBetWeen(vencimento, now)
+                let timebetween = await timeBetween(vencimento, now)
                 //Set Vencimentos em Atrasos
-                if (parseInt(timeBetween) < 0) variables.vencimentos.atrasos.push({linhas})
+                if (parseInt(timebetween) < 0) variables.vencimentos.atrasos.push({linhas})
             }
         }).then(async () => {
             variables.vencimentos.d0 = []
+            await createJsonFiles('vencimentos-de-hoje')
             for (const linhas of db.raw.data) {
                 let now = new Date(newTimer(new Date()).fulldate)
                 let vencimento = new Date(linhas.datas.vencimento)
-                let timeBetween = await getTimeBetWeen(vencimento, now)
+                let timebetween = await timeBetween(vencimento, now)
                 //Set Vencimentos em jk
-                if (parseInt(timeBetween) == 0) variables.vencimentos.d0.push({linhas})
+                if (parseInt(timebetween) == 0) variables.vencimentos.d0.push({linhas})
             }
         }).then(async () => {
-            console.log(variables.vencimentos);
+            //Create File depicturing due time till 3 days
+            await writeLogToJson("vencimentos-3-dias" , {"vencimentos": variables.vencimentos.d3})
+            //Create File depicturing due time till 7 days
+            await writeLogToJson("vencimentos-7-dias" , {"vencimentos": variables.vencimentos.d7})
+            //Create File depicturing due time today
+            await writeLogToJson("vencimentos-de-hoje" , {"vencimentos": variables.vencimentos.d0})            
+            //Create File depicturing due already blowup
+            await writeLogToJson("vencimentos-atrasos" , {"vencimentos": variables.vencimentos.atrasos})
         }).catch((errs) => { console.log(errs); })
 }
 //Export data
