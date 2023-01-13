@@ -7,7 +7,7 @@ const { newTimer, timeBetween } = require("./src/getclocks/_getclocks")
 //Get Variables
 let obj = {}
 //obj.timer = 3600000 //1hour
-obj.timer = 300 //5 segundos
+obj.timer = 10000 //5 segundos
 obj.port = 3100 //porta do express
 /* ------------------------------------- Get BlackBox ------------------------------------- */
 //Set Store date
@@ -21,6 +21,7 @@ const timers = async () => {
     let tday = newTimer(new Date())
     obj.store = setStore(tday.datte)
     //Set Interval of senddata
+    /*
     setInterval(() => {
         let cTime = newTimer(new Date())
         if (cTime.datte == obj.store) {
@@ -29,8 +30,10 @@ const timers = async () => {
         }
         console.log("...");
     }, obj.timer)
+    */
 }
-timers()
+//timers()
+createDueTimeLists()
 /* ------------------------------------ Startup Server ----------------------------------- */
 //Start express
 const app = express()

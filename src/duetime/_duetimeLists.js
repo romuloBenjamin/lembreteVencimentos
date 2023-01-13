@@ -10,7 +10,7 @@ db.raw = {}
 /* ------------------------------------- Get BlackBox ------------------------------------- */
 //Get SQL Boleto
 const sqlBoletos = () => {
-    db.sql = "SELECT `bol_data_cadastro`, `bol_destinatario`, `bol_nota`, `bol_vencimento`, `bol_fatura`, `bol_info_boleto`, `bol_code`, `nf_emissao`, `nf_numero`, `nf_chave`, `nf_valor`, `des_nome`, `des_documento`, `des_email` "
+    db.sql = "SELECT `bol_data_cadastro`, `bol_destinatario`, `bol_nota`, `bol_vencimento`, `bol_fatura`, `bol_info_boleto`, `bol_code`, `nf_id`, `nf_emissao`, `nf_numero`, `nf_chave`, `nf_valor`, `des_nome`, `des_documento`, `des_email` "
     db.sql += "FROM `empresa_notas_boletos` ";
     db.sql += "INNER JOIN `empresa_notas` ON `empresa_notas_boletos`.`bol_nota` = `empresa_notas`.`nf_id` "
     db.sql += "INNER JOIN `empresa_notas_destinatarios` ON `empresa_notas_boletos`.`bol_destinatario` = `empresa_notas_destinatarios`.`des_id`"
@@ -25,8 +25,7 @@ const createDueTimeLists = async (req, res) => {
         .then(async ([rows, fields]) => {
             //Store data in db loop
             let dd = await executeLoop(rows)
-            db.raw.data = dd
-            console.log(db.raw.data.length);
+            db.raw.data = dd            
         }).then(async () => {
             variables.vencimentos.d3 = []
             await createFiles('vencimentos-3-dias')
@@ -76,7 +75,9 @@ const createDueTimeLists = async (req, res) => {
             await writeFiles("vencimentos-de-hoje" , {"vencimentos": variables.vencimentos.d0})            
             //Create File depicturing due already blowup
             await writeFiles("vencimentos-atrasos" , {"vencimentos": variables.vencimentos.atrasos})
-        }).then(async () => sendLembretes())
+            //Stdout
+            console.log("Gerado os Vencimentos para 0, 3, 7 e atrasos!");
+        }).then(async () => sendLembretes(variables.vencimentos))
         .catch((errs) => { console.log(errs); })
 }
 //Export data

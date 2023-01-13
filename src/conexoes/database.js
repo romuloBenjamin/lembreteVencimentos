@@ -22,8 +22,9 @@ const executeQuery = async (sql, values) => {
 }
 //Build Loopdata from Execute Query
 const buildLoopFromQuery = async (linhas) => {
-    //Set Datas de Cadastro, Vencimentos e Emissão
+    //Set Datas de Cadastro NFE e Boletos
     dados.rows = {}
+    //Dados de Cadastro e Vencimentos
     dados.rows.datas = {}
     dados.rows.datas.cadastro = (!linhas.bol_data_cadastro)? null : linhas.bol_data_cadastro
     dados.rows.datas.vencimento = (!linhas.bol_vencimento)? null : linhas.bol_vencimento
@@ -37,11 +38,13 @@ const buildLoopFromQuery = async (linhas) => {
     if (linhas.des_documento.length === 11) dados.rows.cliente.cpf = linhas.des_documento 
     if (linhas.des_documento.length === 14) dados.rows.cliente.cnpj = linhas.des_documento
     if (linhas.des_documento.length !== 11 || linhas.des_documento.length !== 14) dados.rows.cliente.doc = linhas.des_documento
-    //Dados de Emissão
-    dados.rows.faturas = (!linhas.bol_fatura)? null : linhas.bol_fatura
-    dados.rows.nfe = (!linhas.nf_numero)? null : linhas.nf_numero
-    dados.rows.valor = (!linhas.nf_valor)? null : linhas.nf_valor
-    dados.rows.key = (!linhas.nf_chave)? null : linhas.nf_chave
+    //Dados de Emissão da NFE
+    dados.rows.nfe = {}
+    dados.rows.nfe.faturas = (!linhas.bol_fatura)? null : linhas.bol_fatura
+    dados.rows.nfe.nfe = (!linhas.nf_numero)? null : linhas.nf_numero
+    dados.rows.nfe.valor = (!linhas.nf_valor)? null : linhas.nf_valor
+    dados.rows.nfe.key = (!linhas.nf_chave)? null : linhas.nf_chave
+    dados.rows.nfe.id = (!linhas.nf_id)? null : linhas.nf_id
     //Set Dados linhas
     dados.linhas.push(dados.rows)
 }
