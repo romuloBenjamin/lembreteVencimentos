@@ -6,22 +6,22 @@ let variables = require("./src/config/config.json")
 const { newTimer, timeBetween } = require("./src/getclocks/_getclocks")
 //Get Variables
 let obj = {}
-//obj.timer = 3600000 //1hour
-obj.timer = 10000 //5 segundos
-obj.port = 3100 //porta do express
+obj.timer = 86400000 //24 horas 60*60*1000
+//obj.port = 3100 //porta do express
 /* ------------------------------------- Get BlackBox ------------------------------------- */
 //Set Store date
 const setStore = (data) => obj.store = data
 //Create List of pays due time
-const { createDueTimeLists } = require("./src/duetime/_duetimeLists.js")
+const { createDueTimeLists, createBoundeList } = require("./src/duetime/_duetimeLists.js")
+//Create List of Bounces
+createBoundeList()
 /* ----------------------------------- Get TimerScripts ----------------------------------- */
-//Loud Timers
+//Loud Timers 1d
 const timers = async () => {
     //Pega o dia de hoje e coloca na memoria
     let tday = newTimer(new Date())
     obj.store = setStore(tday.datte)
     //Set Interval of senddata
-    /*
     setInterval(() => {
         let cTime = newTimer(new Date())
         if (cTime.datte == obj.store) {
@@ -29,11 +29,10 @@ const timers = async () => {
             return createDueTimeLists()
         }
         console.log("...");
-    }, obj.timer)
-    */
+    }, obj.timer)    
 }
-//timers()
-createDueTimeLists()
+//Timer 1d
+timers()
 /* ------------------------------------ Startup Server ----------------------------------- */
 //Start express
 const app = express()

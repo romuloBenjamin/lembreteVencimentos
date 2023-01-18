@@ -5,18 +5,22 @@ let variables = require("../config/config.json")
 //Get Variables
 let dados = {}
 dados.linhas = []
+dados.bounces = []
 //SET CONECTIONS
-const infos = { 
-    host: variables.database.cloudServer.host,
-    user: variables.database.cloudServer.username, 
-    password: variables.database.cloudServer.password, 
-    database: variables.database.cloudServer.scheme, 
-    waitForConnections: true 
+const conexoesInfos = async (node = 'cloudServer') => {
+    return {
+        host: variables.database[node].host,
+        user: variables.database[node].username, 
+        password: variables.database[node].password, 
+        database: variables.database[node].scheme, 
+        waitForConnections: true
+    }
 }
-//Create Pool Conections
-const connection = mysql.createPool(infos);
 //Create Query Conections
-const executeQuery = async (sql, values) => {
+const executeQuery = async (sql, values = '', node = 'cloudServer') => {
+    //Create Pool Conections
+    const connection = mysql.createPool(await conexoesInfos(node));
+    //Execute Query data
     const promisePools = connection.promise();
     return await promisePools.query(sql, values)
 }
@@ -48,15 +52,28 @@ const buildLoopFromQuery = async (linhas) => {
     //Set Dados linhas
     dados.linhas.push(dados.rows)
 }
+//Build Loopdata from Execute Query -> Black List
+const buildLoopBlackList = async (linhas) => {
+    //Dados Rows
+    dados.rows = {}
+    //Dados de Cadastro e Vencimentos
+    dados.rows.bounces = {}
+    //dados.rows.bounces.cadastro = linhas.uilvb_cadastro
+    dados.rows.bounces.email = linhas.uilvb_email
+    //Set Dados Bounces
+    dados.bounces.push(dados.rows.bounces.email)
+}
 //Execute Loopdata from SQL Query
-const executeLoop = async (rows) => {
+const executeLoop = async (rows, type = 'listarEmails') => {
     for (const dados in rows) {
         if (Object.hasOwnProperty.call(rows, dados)) {
             const linhas = rows[dados];
-            await buildLoopFromQuery(linhas)
+            //Set type Loopdata
+            if (type === 'listarEmails') await buildLoopFromQuery(linhas)
+            if (type === 'blackList') await buildLoopBlackList(linhas)
         }
     }
-    return dados.linhas
+    return dados
 }
 //SET CONECTIONS
 module.exports = { executeQuery, executeLoop };

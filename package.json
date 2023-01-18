@@ -7,6 +7,6 @@
     "mysql2": "^2.3.3"
   },
   "scripts": {
-    "start": "nodemon ./listarVencimentos.js"
+    "start": "nodemon --ignore ./src/logs ./listarVencimentos.js"
   }
 }

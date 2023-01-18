@@ -1,36 +1,34 @@
 //Get NPM Modules
 const Recipient = require("mailersend").Recipient;
 const EmailParams = require("mailersend").EmailParams;
-const Attachment = require("mailersend").Attachment;
 const MailerSend = require("mailersend");
-const { JSDOM } = require('jsdom')
+//Add Cripto JS
+let { createStatusSender } = require("../logFactory/_logfactory")
+const { emcrypto } = require("../crypto/_crypto")
 /* ------------------------------------- Get BlackBox ------------------------------------- */
 //Get MailerSend Api
-const mailConfig = async (obj) => {
-    /* //GMAIL DADOS
-    return nodemailer.createTransport({
-        service: "gmail",
-        port: 465,
-        secure: true,
-        debug: true,
-        auth: {
-            user: 'sales.cleaner.externo@gmail.com',
-            pass: "sijchcccjefvimkm"
-        }
-    }); */
+const mailConfig = async () => {
     //MailerSend dados
-    return new MailerSend({api_key: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZWQxZjA0MThjODY3MGIxMDU1MjE4ZWJjN2MyZGNlNmM2NDNlNWFiMWE3MzU0Y2E3YTAyN2RlMzNiOGZkYjAwM2Y4NDZjNGViOGU4NGRhZTgiLCJpYXQiOjE2NzM0NDU4NDUuNzExMTE2LCJuYmYiOjE2NzM0NDU4NDUuNzExMTE5LCJleHAiOjQ4MjkxMTk0NDUuNzA2ODY4LCJzdWIiOiIzODY0MSIsInNjb3BlcyI6WyJlbWFpbF9mdWxsIiwiZG9tYWluc19yZWFkIiwiYWN0aXZpdHlfcmVhZCIsInRva2Vuc19mdWxsIiwidGVtcGxhdGVzX2Z1bGwiLCJpbmJvdW5kc19mdWxsIiwicmVjaXBpZW50c19yZWFkIiwic2VuZGVyX2lkZW50aXR5X3JlYWQiXX0.ZF471Rl_zJTrh2W7EsyPdXqGb-0dEwv1BrB4sJIEUbFWPqG-Bp2aHt2M_E7Bb5_GOM8oGPjgZCWMTQy5W5bB0ebfmXz_uye98SeUXtOWJGhpCZ12xnPrAvQfaeiT6vwl8_ZxXpaO0CyN5pPp9qAIRsiZ2kAGOJqL6zd8-t3Jcg0RV6XHpKGpLpcB1vfnoKrZ-9mzt__3fZ1iR4px4BbB7UNWjeZmXXxrFo14JDDyfRUtSz1YznUqviQchLtWbvkBKHzEcCP9Tx0h7nGnLoUI0e383bBvkSmMIozVDohuKJ5lschc2Ol0GCpQvQApQj4qgIqSWiV2srzG9OkLhTNDTsAdwt5s2QdRMKtzHyBs0es5-Ed2-XYcsF4Nb4wZ-a3FtTuCSVAvXTBAJbUvykTl729AzeXaRWrRquAKWOay_xzFeQLUXAT0pWo5DBuwUHEdMPmTB4BEaAK-7nv0WyJGP5zmMc7MifwaTbD1B70SCxph3tIG00ZkC5abCODx2QmE4ut8JzuWr2chbjeKub2kAXt61QKFLiJfVezZ3ySU2d13P-zJ6bTgwx19RAc9TTNNqaOlju8nw8wmkoW4_48TdXVwTBW0PuxvoiyDlwkUAmy3xQxMRoVEqK75KOdDk1rzOUuHWxZZRgiiCgXTq3dQ3GA0ryuEDMBPMBjHx7q3byQ"});
+    return new MailerSend({api_key: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiMmY1NmI5OTEwNmMxMjdlODMwYzFjNGI5ZWRjMWRlMzBiOTU1OWVjNGFhMjY2NWI2MTU2MGJkN2M4ZWVkMjU1NTAwZGY3Y2JiYWUxOWQ1MjciLCJpYXQiOjE2NzM4NzI5NzIuNjU5NDM4LCJuYmYiOjE2NzM4NzI5NzIuNjU5NDQxLCJleHAiOjQ4Mjk1NDY1NzIuNjU1NjkxLCJzdWIiOiIzODY0MSIsInNjb3BlcyI6WyJlbWFpbF9mdWxsIiwiZG9tYWluc19yZWFkIiwiYWN0aXZpdHlfcmVhZCIsImFuYWx5dGljc19yZWFkIiwidG9rZW5zX2Z1bGwiLCJ0ZW1wbGF0ZXNfZnVsbCIsImluYm91bmRzX2Z1bGwiLCJyZWNpcGllbnRzX3JlYWQiXX0.SmiOHsbCL4w062x2SktNuQ6UkyrmfrW66posGl7tf4uLFt6JdbikWGJeKFfP-OQEEBzlQdqWtuDG8Xs2nWFQ7zE9-ycoNXeFdvcAbmNMGJDUSbhbFL2RnPPboGif84D4XOIM6zzpY83dSe2y8VuyTGbaM2kX5WLpHU_zR6GiICUDjpAzhIqe1M36hsYNzvkvvZa0gxEECZ4PKxv618v8vhmhhXGut3WNV3EAwQCSVH2H-LuEXYZrh8ItRXYqsMoJhLHfmNjKA5BcmFi4BLJXXck2uRj8Rcwe4rcf73JuErNO2BRomR5ZGWnPYywBrtJJBh3pnXh3NzWVwLf8evkbtsDC3OhFZaNtj_sUGeil5--h32zDwMAuNAjiUS9Bdajk5lE4C1oAAtA6P38HFdd1dvQdqS_xRkRgmnpLAF6E0iX5x_1_X2iAtImbrwYoROhoUy-J4v5NymL4nFq2Zq7C0UrFKM9fH0neCAYT3xlHw68pFd9BEHXwz-5elcdiGmLSfY415bZdxmbHiDESr9p-sUaxf4PYP7M26XmfZ17gfsIyNbiWE-FvVG0U_G9cVhvVHEV_L2fCk88M15hK-A90PNutM9-fqjf-wbtSeWK_RSb2DUcYBvcWsp-fG7KNhe7Lxrr5ADQpVgtJ76EkEbEk4CB__9gG6QpXCwqizfBRPLA"});
 }
-//
-const setTemplate = async (emails) => {
+//Emails Variables
+const variablesEmails = async (emails) => {
+    //Get Data
     let ddatta = new Date(emails.datas.vencimento)
-    let dds = {
-        cliente: emails.cliente.nome, 
-        nfe: emails.nfe, 
-        vencimento: `${ddatta.getDate().toString().padStart(2, '0')}/${(ddatta.getMonth() + 1).toString().padStart(2, '0')}/${ddatta.getFullYear()}`,
-        bol: ""
+    //Set Dados 'dd'
+    let dd = { 
+        cliente: emails.cliente.nome,
+        nfen: emails.nfe.nfe, 
+        vencimento: `${ddatta.getDate().toString().padStart(2, '0')}/${(ddatta.getMonth() + 1).toString().padStart(2, '0')}/${ddatta.getFullYear()}`
     }
-    //Create HTML
+    //complementar 'blink' ao 'dd'
+    dd.blink = await emcrypto(emails)
+    return dd
+}
+//Set Template to HTML E-mails
+const htmlTemplate = async (emails) => {
+    let dd = await variablesEmails(emails)
+    //Create Obj dds
     let template = `<html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -78,7 +76,7 @@ const setTemplate = async (emails) => {
                             <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width: 80%;height: 100%;">
                                 <tbody>
                                     <tr>
-                                        <td><img style="width:auto;height:120px;" src="http://162.241.88.255/~wwsale/images/sales_logo.png"></td>
+                                        <td align="center"><img style="width:auto;height:120px;" src="http://162.241.88.255/~wwsale/images/sales_logo.png"></td>
                                     </tr>
                                 </tbody>
                             </table>    
@@ -92,14 +90,13 @@ const setTemplate = async (emails) => {
                                         <td style="vertical-align: bottom;">
                                             <div style="width: 80%;margin: 0 auto;">
                                                 <p>Olá,</p>
-                                                <strong id="cliente"></strong>
+                                                <strong id="cliente">${dd.cliente}</strong>
                                                 <p>A data de vencimento do seu boleto está se aproximando, para facilitar o pagamento estamos informando abaixo as Notas Fiscais que constam registradas em nosso sistema, bem como os respectivos valores, vencimentos e parcelas.</p>                
-                                                <strong id="nfen"></strong>
-                                                <strong id="vencimento"></strong>
+                                                <strong id="nfen">${dd.nfen}</strong> - <strong id="vencimento">${dd.vencimento}</strong>
                                                 <br>
                                                 <br>
                                                 <br>
-                                                <p><a id="buttonLink" href="#">Gerar Boleto</a></p>
+                                                <p><a id="buttonLink" href="https://sales.com.br/boleto-lembrete-vencimento?token=${dd.blink}">Gerar Boleto</a></p>
                                                 <br>
                                                 <p>Caso este boleto já tenha sido recebido anteriormente, favor desconsiderar esta mensagem</p>
                                                 <br>
@@ -134,14 +131,14 @@ const setTemplate = async (emails) => {
                                     <tr>
                                         <td>
                                             <div>
-                                                <p style="margin: .25rem 0;">Sales Distribuidora  - Todos os direitos reservados</p>
+                                                <p style="text-align: center;margin: .25rem 0;">Sales Distribuidora  - Todos os direitos reservados</p>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td>
                                             <div>                                            
-                                                <p style="margin: .25rem 0;">R. Palmeria de Batuá 199, Jardim Eliane, São Paulo - SP - CEP 03575110</p>
+                                                <p style="text-align: center;margin: .25rem 0;">R. Palmeria de Batuá 199, Jardim Eliane, São Paulo - SP - CEP 03575110</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -153,50 +150,49 @@ const setTemplate = async (emails) => {
             </table>        
         </div> 
     </body>
-    </html>`;
-    //Ajustar Doms
-    try {
-        let doms = new JSDOM(template)
-        doms.window.document.getElementById("cliente").innerHTML = dds.cliente
-        doms.window.document.getElementById("nfen").innerHTML = dds.nfe
-        doms.window.document.getElementById("vencimento").innerHTML = `Vencimento: ${dds.vencimento}`
-        doms.window.document.getElementById("buttonLink").setAttribute('href', "dados.bol.toString('utf8')")
-        //Responser
-        return doms.window.document.querySelector("html").outerHTML        
-    } catch (error) {
-        return error
-    }
+    </html>`
+    return template
 }
-//
-const transporters = async () => {
-    const transporter = await mailConfig()
-    return transporter
+//Set Template to Text E-mails
+const textTemplate = async (emails) => {
+    let dd = await variablesEmails(emails)
+    //Create Obj dds
+    let template = `Olá ${dd.cliente}, este é um e-mail de lembrete de vencimento, referente a NFE: ${dd.nfen}, ao qual esta para vencer em: ${dd.vencimento}. Caso não tenha o boleto acesse nosso site: "https://sales.com.br/login".`
+    return template    
 }
 /* ----------------------------------- Start MailerSend ----------------------------------- */
 //SendEmails by
-const sendEmails = async (emails, transps) => {
-    //Set Template
-    const templete = await setTemplate(emails)
-    console.log(templete);
-    /*
+const sendEmails = async (emails) => {
+    //Set date Vencimento + HJ
+    let tdays = {}
+    tdays.hj = new Date()
+    tdays.pt = new Date(emails.datas.vencimento)
+    tdays.fileSuccess = `disp-${tdays.hj.getFullYear() + (tdays.hj.getMonth() + 1).toString().padStart(2, '0') + tdays.hj.getDate().toString().padStart(2, '0')}-venc-${tdays.pt.getFullYear() + (tdays.pt.getMonth() + 1).toString().padStart(2, '0') + tdays.pt.getDate().toString().padStart(2, '0')}-enviados`
+    tdays.fileFailure = `disp-${tdays.hj.getFullYear() + (tdays.hj.getMonth() + 1).toString().padStart(2, '0') + tdays.hj.getDate().toString().padStart(2, '0')}-venc-${tdays.pt.getFullYear() + (tdays.pt.getMonth() + 1).toString().padStart(2, '0') + tdays.pt.getDate().toString().padStart(2, '0')}-falhas`
+    //Set Transporters
+    const transporter = await mailConfig();
+    //Set Template HTML
+    const templateHTML = await htmlTemplate(emails)
+    //Set Template Text
+    const templateText = await textTemplate(emails)
     //Get Recipients
-    //const recipients = [new Recipient(emails.cliente.email, emails.cliente.nome)];
-    const recipients = [new Recipient("romulo.b.franco@hotmail.com", "Romulo Franco")];
+    const recipients = [new Recipient(emails.cliente.email, emails.cliente.nome)];
     //Send E-mail
     const emailParams = new EmailParams()
-        .setFrom("lembrete.vencimento@contatosales.com.br")
-        .setFromName("Contato Sales")
-        .setRecipients(recipients)          
-        .setSubject("Lembrete de Vencimentos")
-        .setHtml(templete)
-        .setText("text");
-    try {
-        transps.send(emailParams);
-        return {status: 1, message: `E-mail enviado com Sucesso! -> ${emails.cliente.email}`, log: JSON.stringify(emailParams)}
-    } catch (error) {
-        return {status: 0, message: `Erro ao enviar lembrete -> ${error}, E-mail, -> ${emails.cliente.email}\n`, error: JSON.stringify(emailParams)}
-    }
-    */
+            .setFrom("lembrete.vencimento@contatosales.com.br")
+            .setFromName("Contato Sales")
+            .setRecipients(recipients)
+            .setSubject("Lembrete de Vencimentos")
+            .setHtml(templateHTML)
+            .setText(templateText)
+            try {                
+                //transporter.send(emailParams)
+                createStatusSender(JSON.stringify(emailParams), tdays.fileSuccess, '.txt')
+                return {status: 1, message: `E-mail enviado com Sucesso! -> ${emails.cliente.email}`, log: JSON.stringify(emailParams)}
+            } catch (error) {
+                createStatusSender(JSON.stringify(error), tdays.fileFailure, '.txt')
+                return {status: 0, message: `Erro ao enviar lembrete -> ${error}, E-mail, -> ${emails.cliente.email}\n`, error: JSON.stringify(emailParams)}
+            }
 }
-
-module.exports = { sendEmails, transporters }
+//Export Modules
+module.exports = { sendEmails }

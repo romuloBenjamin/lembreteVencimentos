@@ -16,6 +16,11 @@ const sqlBoletos = () => {
     db.sql += "INNER JOIN `empresa_notas_destinatarios` ON `empresa_notas_boletos`.`bol_destinatario` = `empresa_notas_destinatarios`.`des_id`"
     return db;
 }
+//Get SQL Boundes List - Black List
+const sqlBouncesList = () => {
+    db.sql2 = "SELECT `uilvb_cadastro`, `uilvb_email` FROM `uni_intra_lembrete_vencimentos_bounces`"
+    return db;
+}
 /* ------------------------------------ Start Process ------------------------------------ */
 //Create List of pays by due time
 const createDueTimeLists = async (req, res) => {
@@ -24,8 +29,8 @@ const createDueTimeLists = async (req, res) => {
     await executeQuery(sql.sql)
         .then(async ([rows, fields]) => {
             //Store data in db loop
-            let dd = await executeLoop(rows)
-            db.raw.data = dd            
+            let linhas = await executeLoop(rows)
+            db.raw.data = linhas.linhas
         }).then(async () => {
             variables.vencimentos.d3 = []
             await createFiles('vencimentos-3-dias')
@@ -80,5 +85,23 @@ const createDueTimeLists = async (req, res) => {
         }).then(async () => sendLembretes(variables.vencimentos))
         .catch((errs) => { console.log(errs); })
 }
+//Create List of Boundes -> black list
+const createBoundeList = async () => {
+    //Get SQL data
+    let sql = sqlBouncesList()
+    await executeQuery(sql.sql2, '', 'uni_intra')
+        .then(async ([rows, fields]) => {
+            let bounces = await executeLoop(rows, 'blackList')
+            db.raw.bounces = bounces.bounces
+        }).then(async () => {
+            variables.emails.bounces = []
+            await createFiles('bouncesList')
+            for (const bounce of db.raw.bounces) variables.emails.bounces.push(bounce);            
+        }).then(async () => {
+            //Write Bounce List, black list
+            await writeFiles('bouncesList', {"bounces": variables.emails.bounces})
+        }).then(async () => console.log(variables.emails.bounces))
+        .catch((errs) => console.log(errs))
+}
 //Export data
-module.exports = { createDueTimeLists }
+module.exports = { createDueTimeLists, createBoundeList }
